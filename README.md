@@ -6,7 +6,7 @@ Sistema interno de monitoramento semanal de jornada de trabalho para colaborador
 
 ## Acesso ao relatório
 
-[**Abrir relatório atual (S20/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
+[**Abrir relatório atual (S21/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
 
 ## O que é
 
