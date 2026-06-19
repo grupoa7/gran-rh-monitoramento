@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Monitoramento de Jornada · S23/2026 · v3.2</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root { --bg:#fff; --bg-soft:#f6f4ee; --bg-cream:#faf7ef; --border:#e8e3d4; --border-soft:#f0ebdc;
+  --ink:#1a1f1a; --ink-dim:#4a5248; --ink-mute:#8b8f86;
+  --gran-verde:#1e4d2b; --gran-verde-3:#3f8654; --gran-verde-bg:#e7f0e9;
+  --gran-dourado:#c9a227; --gran-dourado-2:#e8b93a; --gran-dourado-bg:#faf1d4;
+  --vermelho:#b8362f; --vermelho-bg:#f2d9d3; --vermelho-soft:#fce7e3;
+  --amarelo:#d4a52e; --amarelo-soft:#fcf6dd;
+  --verde:#3f8654; --verde-bg:#e7f0e9; --verde-soft:#f3f9f4;
+  --azul:#3a7bc8; --azul-soft:#e8f0f9;
+  --laranja:#f97316; --laranja-soft:#fff4e6;
+  --shadow:0 1px 2px rgba(30,77,43,0.04), 0 4px 12px rgba(30,77,43,0.06); }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Nunito Sans', sans-serif; background:var(--bg-cream); color:var(--ink); font-size:14px; line-height:1.45; }
+.mono { font-family:'JetBrains Mono', monospace; }
+.banner-real { background:#e7f0e9; border-bottom:2px solid var(--verde); padding:10px 40px; font-size:12px; color:var(--gran-verde); }
+.banner-real strong { color:#0d3a1a; }
+.main-header { background:var(--gran-verde); color:#fff; padding:28px 40px 24px; display:flex; justify-content:space-between; align-items:flex-end; }
+.main-header .eyebrow { font-family:'JetBrains Mono'; font-size:11px; letter-spacing:1.5px; color:var(--gran-dourado-2); margin-bottom:8px; font-weight:500; }
+.main-header h1 { font-size:38px; font-weight:800; letter-spacing:-0.8px; line-height:1.1; }
+.main-header h1 em { color:var(--gran-dourado-2); font-style:normal; }
+.main-header .subtitle { font-size:14px; color:rgba(255,255,255,0.7); margin-top:6px; font-weight:500; }
+.main-header .meta { text-align:right; font-size:12px; color:rgba(255,255,255,0.85); line-height:1.7; }
+.main-header .meta strong { color:var(--gran-dourado-2); }
+.tabs-wrap { background:#fff; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
+.tabs { display:flex; padding:0 40px; max-width:1500px; margin:0 auto; }
+.tab { background:transparent; border:0; padding:16px 22px; font-family:inherit; font-size:13px; font-weight:700; color:var(--ink-mute); cursor:pointer; border-bottom:3px solid transparent; display:flex; align-items:center; gap:10px; }
+.tab:hover { color:var(--ink-dim); background:var(--bg-soft); }
+.tab.active { color:var(--gran-verde); border-bottom-color:var(--gran-dourado); background:var(--bg-cream); }
+.tab .num { font-family:'JetBrains Mono'; font-size:11px; font-weight:600; padding:2px 6px; border-radius:3px; background:var(--bg-soft); color:var(--ink-mute); }
+.tab.active .num { background:var(--gran-verde); color:var(--gran-dourado-2); }
+.tab.rh .num { background:var(--azul); color:#fff; }
+main { max-width:1500px; margin:0 auto; padding:28px 40px 60px; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.panel-header { margin-bottom:24px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+.panel-header h2 { font-size:22px; font-weight:700; }
+.panel-header p { font-size:13px; color:var(--ink-dim); margin-top:4px; }
+
+/* Aba 01 — formato consolidado */
+.section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:22px 26px; margin-bottom:22px; box-shadow:var(--shadow); }
+.section h3.sec { font-size:16px; font-weight:800; margin-bottom:6px; }
+.section .subt { font-size:12px; color:var(--ink-dim); margin-bottom:16px; }
+.kpis-cum { display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; margin-bottom:0; }
+.kpi-card { background:var(--bg-soft); border-radius:6px; padding:12px 14px; }
+.kpi-card .lbl { font-family:'JetBrains Mono'; font-size:9px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px; }
+.kpi-card .val { font-size:24px; font-weight:800; line-height:1; }
+.kpi-card.crit .val { color:var(--vermelho); }
+.kpi-card.alert .val { color:var(--amarelo); }
+.kpi-card.ok .val { color:var(--verde); }
+.heatmap-multi { display:grid; gap:3px; }
+.hm-header-multi { display:grid; gap:3px; align-items:center; margin-bottom:4px; padding:4px 0; border-bottom:1px solid var(--border); }
+.hm-header-multi .h { font-family:'JetBrains Mono'; font-size:10px; color:var(--ink-mute); text-align:center; font-weight:700; }
+.hm-row-multi { display:grid; gap:3px; align-items:center; }
+.hm-row-multi .nome { font-size:11px; font-weight:600; color:var(--ink-dim); text-align:right; padding-right:8px; line-height:1.3; }
+.hm-row-multi .nome small { display:block; font-size:9px; color:var(--ink-mute); }
+.hm-row-multi .cell-mt { height:22px; border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-size:9px; color:#fff; font-weight:700; }
+.cell-mt.cs-crit { background:var(--vermelho); }
+.cell-mt.cs-alert { background:var(--amarelo); color:#5c3d00; }
+.cell-mt.cs-ok { background:var(--verde); }
+.cell-mt.cs-na { background:var(--bg-soft); }
+.tabela-semanas { width:100%; border-collapse:collapse; }
+.tabela-semanas th { background:var(--gran-verde); color:var(--gran-dourado-2); font-family:'JetBrains Mono'; font-size:10px; text-transform:uppercase; letter-spacing:1px; padding:10px 12px; text-align:left; font-weight:700; }
+.tabela-semanas td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:13px; font-family:'JetBrains Mono'; text-align:center; }
+.tabela-semanas td.sid { font-weight:700; text-align:left; }
+.tabela-semanas td.periodo { color:var(--ink-mute); font-size:11px; text-align:left; }
+.tabela-semanas td.atual { background:var(--gran-dourado-bg); }
+.v-crit { color:var(--vermelho); font-weight:700; } .v-alert { color:var(--amarelo); font-weight:700; } .v-ok { color:var(--verde); font-weight:700; }
+.tornado { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.tornado-card { background:var(--bg-soft); border-radius:6px; padding:14px 16px; }
+.tornado-card h4 { font-size:13px; margin-bottom:10px; }
+.tornado-card.melhora h4 { color:var(--verde); }
+.tornado-card.piora h4 { color:var(--vermelho); }
+.tornado-bar { display:flex; align-items:center; padding:6px 0; border-bottom:1px dashed var(--border); font-size:12px; gap:8px; }
+.tornado-bar .nm { flex:1; font-weight:600; }
+.tornado-bar .delta { font-family:'JetBrains Mono'; font-weight:700; font-size:11px; padding:2px 6px; border-radius:3px; }
+.tornado-bar .delta.neg { background:var(--verde-bg); color:var(--verde); }
+.tornado-bar .delta.pos { background:var(--vermelho-soft); color:var(--vermelho); }
+.top-rank { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+.top-rank .top-card { background:var(--bg-soft); border-radius:6px; padding:14px 16px; }
+.top-rank .top-card h4 { font-family:'JetBrains Mono'; font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+.top-rank ol { list-style:none; counter-reset:t; }
+.top-rank li { padding:6px 0; counter-increment:t; display:flex; align-items:center; gap:8px; font-size:12px; border-bottom:1px dashed rgba(0,0,0,0.05); }
+.top-rank li::before { content:counter(t); font-family:'JetBrains Mono'; font-size:10px; color:var(--ink-mute); width:18px; }
+.top-rank li .nm { flex:1; font-weight:600; }
+.top-rank li .total { font-family:'JetBrains Mono'; font-weight:700; font-size:12px; color:var(--vermelho); }
+.chart-wrap { padding:10px; background:var(--bg-soft); border-radius:6px; }
+canvas { max-height:260px; }
+
+/* Abas 02-04 (mesmo do v3.1) */
+.kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+.kpi { background:#fff; border:1px solid var(--border); border-radius:8px; padding:16px; box-shadow:var(--shadow); }
+.kpi .lbl { font-family:'JetBrains Mono'; font-size:10px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:1px; font-weight:600; margin-bottom:6px; }
+.kpi .val { font-size:32px; font-weight:800; line-height:1; letter-spacing:-1px; }
+.kpi.crit .val { color:var(--vermelho); } .kpi.alert .val { color:var(--amarelo); } .kpi.ok .val { color:var(--verde); }
+.tops { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+.top-card-w { background:#fff; border:1px solid var(--border); border-radius:8px; padding:16px 18px; box-shadow:var(--shadow); }
+.top-card-w h3 { font-family:'JetBrains Mono'; font-size:11px; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border-soft); }
+.top-card-w.crit h3 { color:var(--vermelho); }
+.top-card-w.alert h3 { color:var(--amarelo); }
+.top-card-w.warn h3 { color:var(--gran-dourado); }
+.top-card-w ol { list-style:none; counter-reset:t; }
+.top-card-w li { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--border-soft); font-size:13px; counter-increment:t; }
+.top-card-w li::before { content:counter(t); font-family:'JetBrains Mono'; font-size:11px; color:var(--ink-mute); margin-right:10px; width:18px; }
+.top-card-w li.empty { color:var(--verde); font-style:italic; }
+.top-card-w .nm { font-weight:600; flex:1; } .top-card-w .vl { font-family:'JetBrains Mono'; font-weight:700; font-size:12px; }
+.table-wrap { background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:var(--shadow); }
+table.panorama { width:100%; border-collapse:collapse; }
+table.panorama thead { background:var(--gran-verde); color:#fff; }
+table.panorama th { padding:12px 14px; font-family:'JetBrains Mono'; font-size:10px; text-transform:uppercase; letter-spacing:1px; font-weight:600; color:var(--gran-dourado-2); text-align:left; }
+table.panorama th.num { text-align:center; }
+table.panorama td { padding:12px 14px; font-size:13px; border-top:1px solid var(--border-soft); vertical-align:middle; }
+table.panorama tbody tr:hover { background:var(--bg-cream); }
+.badge { display:inline-block; font-family:'JetBrains Mono'; font-size:10px; font-weight:700; padding:3px 8px; border-radius:3px; letter-spacing:0.5px; white-space:nowrap; }
+.badge.crit { background:var(--vermelho); color:#fff; } .badge.alert { background:var(--amarelo); color:#fff; } .badge.ok { background:var(--verde); color:#fff; }
+.badge.medio { background:var(--laranja); color:#fff; } .badge.info { background:#64748b; color:#fff; } .badge.rh { background:var(--azul); color:#fff; }
+.nome-cell { font-weight:700; }
+.setor-cell { font-family:'JetBrains Mono'; font-size:11px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:0.5px; }
+.setor-cell.restrito { color:var(--gran-dourado); }
+.num-cell { font-family:'JetBrains Mono'; text-align:center; font-weight:600; }
+.num-cell.zero { color:#cbd5e1; } .num-cell.alert { color:var(--amarelo); font-weight:700; } .num-cell.crit { color:var(--vermelho); font-weight:700; }
+.detalhe-wrap { background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow); overflow:auto; }
+table.detalhe { width:100%; border-collapse:collapse; min-width:1320px; }
+table.detalhe thead { background:var(--gran-verde); color:#fff; }
+table.detalhe thead th { padding:10px 8px; font-family:'JetBrains Mono'; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; color:var(--gran-dourado-2); border-right:1px solid rgba(255,255,255,0.1); vertical-align:middle; }
+table.detalhe thead th.col-nome { text-align:left; width:180px; padding-left:16px; }
+table.detalhe thead th.col-dia { text-align:center; width:calc((100% - 180px) / 7); min-width:155px; }
+table.detalhe thead th.col-dia .dia-num { display:block; font-size:13px; color:#fff; font-weight:800; margin-top:2px; }
+table.detalhe tbody tr { border-top:1px solid var(--border); }
+table.detalhe tbody tr.setor-divider { background:var(--bg-soft); }
+table.detalhe tbody tr.setor-divider td { padding:6px 16px; font-family:'JetBrains Mono'; font-size:10px; text-transform:uppercase; letter-spacing:1px; font-weight:700; color:var(--ink-dim); border-bottom:1px solid var(--border); }
+table.detalhe tbody tr.setor-divider.restrito td { color:var(--gran-dourado); }
+table.detalhe tbody tr.setor-divider.restrito td::before { content:"● "; }
+table.detalhe td { padding:0; border-right:1px solid var(--border-soft); vertical-align:top; }
+table.detalhe td.nome-cell { padding:14px 16px; font-size:13px; font-weight:700; vertical-align:middle; background:var(--bg-cream); border-right:2px solid var(--border); }
+.dia-celula { padding:10px 8px; min-height:120px; font-size:11px; display:flex; flex-direction:column; gap:4px; }
+.dia-celula.ok { background:var(--verde-soft); }
+.dia-celula.alert { background:var(--amarelo-soft); }
+.dia-celula.crit { background:var(--vermelho-soft); }
+.dia-celula.folga { background:var(--bg-soft); }
+.dia-celula.ferias { background:rgba(232,185,58,0.12); }
+.dia-celula .row-prev { font-family:'JetBrains Mono'; font-size:10.5px; color:var(--ink-mute); }
+.dia-celula .row-prev .lbl-mini { font-weight:600; letter-spacing:0.5px; text-transform:uppercase; font-size:9px; margin-right:4px; }
+.dia-celula .row-bateu { font-family:'JetBrains Mono'; font-size:11.5px; font-weight:600; }
+.dia-celula .row-bateu .lbl-mini { font-weight:700; letter-spacing:0.5px; text-transform:uppercase; font-size:9px; margin-right:4px; color:var(--ink-dim); }
+.dia-celula .alertas-list { margin-top:auto; padding-top:6px; border-top:1px solid rgba(0,0,0,0.06); font-size:10.5px; line-height:1.4; }
+.dia-celula .alertas-list .at { display:flex; gap:4px; align-items:flex-start; font-weight:600; margin-top:3px; }
+.dia-celula .alertas-list .at.crit { color:var(--vermelho); }
+.dia-celula .alertas-list .at.warn { color:#8a6d10; }
+.dia-celula .alertas-list .at.ok { color:var(--verde); }
+.dia-celula .alertas-list .at.info { color:var(--ink-dim); }
+.dia-celula .tag-grande { text-align:center; font-family:'JetBrains Mono'; font-weight:700; padding:22px 0; font-size:12px; }
+.dia-celula .tag-grande.folga { color:var(--ink-mute); }
+.dia-celula .tag-grande.ferias { color:#8a6d10; }
+.dia-celula .tag-grande .sub { display:block; font-size:9px; font-weight:500; margin-top:4px; }
+.suspensos-block { margin-top:28px; background:var(--bg-soft); border:1px dashed var(--border); border-radius:8px; padding:16px 20px; font-size:12px; color:var(--ink-dim); }
+.suspensos-block h4 { font-family:'JetBrains Mono'; font-size:10px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.suspensos-block strong { color:var(--ink); }
+.foot { margin-top:36px; padding:18px 0; border-top:1px solid var(--border); font-family:'JetBrains Mono'; font-size:11px; color:var(--ink-mute); text-align:center; }
+.notas { background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px 18px; margin-top:20px; font-size:12px; color:var(--ink-dim); line-height:1.7; }
+.rh-resumo { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
+.rh-resumo-card { background:#fff; border:1px solid var(--border); border-radius:8px; padding:16px 18px; box-shadow:var(--shadow); }
+.rh-resumo-card h4 { font-family:'JetBrains Mono'; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-mute); margin-bottom:6px; font-weight:700; }
+.rh-resumo-card .val { font-size:28px; font-weight:800; line-height:1.1; margin-bottom:4px; }
+.rh-resumo-card .sub { font-size:11px; color:var(--ink-dim); }
+.rh-resumo-card.investigar { border-left:4px solid var(--vermelho); }
+.rh-resumo-card.investigar .val { color:var(--vermelho); }
+.rh-resumo-card.ajuste { border-left:4px solid var(--laranja); }
+.rh-resumo-card.ajuste .val { color:var(--laranja); }
+.rh-resumo-card.verificar { border-left:4px solid var(--azul); }
+.rh-resumo-card.verificar .val { color:var(--azul); }
+.kpi-rh-perf { background:linear-gradient(135deg, var(--gran-verde), #0d3a1a); color:#fff; border-radius:8px; padding:18px 22px; margin-bottom:22px; }
+.kpi-rh-perf h4 { font-family:'JetBrains Mono'; font-size:10px; color:var(--gran-dourado-2); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
+.kpi-rh-perf .legenda { font-size:12px; color:rgba(255,255,255,0.7); margin-top:6px; }
+.kpi-rh-perf .num-grande { font-size:34px; font-weight:800; }
+.tratativa-card { background:#fff; border:1px solid var(--border); border-radius:8px; padding:18px 20px; margin-bottom:14px; box-shadow:var(--shadow); border-left:4px solid var(--ink-mute); }
+.tratativa-card.cat-investigar { border-left-color:var(--vermelho); background:linear-gradient(to right, var(--vermelho-soft) 0%, #fff 30%); }
+.tratativa-card.cat-ajuste { border-left-color:var(--laranja); }
+.tratativa-card.cat-verificar { border-left-color:var(--azul); }
+.tratativa-card .topo { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:12px; }
+.tratativa-card h3 { font-size:16px; font-weight:800; margin-bottom:4px; }
+.tratativa-card .meta-tag { font-family:'JetBrains Mono'; font-size:10px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:1px; }
+.tratativa-card .descricao { font-size:13px; color:var(--ink-dim); margin:8px 0 10px; }
+.tratativa-card .historico-mini { background:var(--azul-soft); border-radius:6px; padding:10px 14px; font-size:12px; color:#1a4380; margin:8px 0; line-height:1.6; }
+.tratativa-card .meta-info { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; padding:10px 12px; background:var(--bg-soft); border-radius:6px; margin-top:8px; font-size:11px; }
+.tratativa-card .meta-info .lbl-mini { display:block; color:var(--ink-mute); font-size:9px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
+.tratativa-card .meta-info .val-mini { color:var(--ink); font-weight:700; font-size:12px; font-family:'JetBrains Mono'; }
+.tratativa-card .acao-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--bg-cream); border-radius:6px; font-size:12px; color:var(--ink); margin-top:8px; }
+.tratativa-card .acao-row .lbl { font-family:'JetBrains Mono'; font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-mute); font-weight:700; flex-shrink:0; }
+.tratativa-card .acao-row .lbl::before { content:""; }
+.tratativa-card .status-row { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#fff; border:1px dashed var(--border); border-radius:6px; margin-top:10px; font-size:11px; }
+.tratativa-card .check-box { width:14px; height:14px; border:2px solid var(--ink-mute); border-radius:3px; display:inline-block; flex-shrink:0; }
+.section-title { font-size:15px; font-weight:800; margin:22px 0 12px; padding-bottom:6px; border-bottom:2px solid var(--border); display:flex; align-items:center; gap:10px; }
+.section-title.investigar { color:var(--vermelho); border-bottom-color:var(--vermelho-bg); }
+.section-title.ajuste { color:var(--laranja); border-bottom-color:#fed7aa; }
+.section-title.verificar { color:var(--azul); border-bottom-color:#bfdbfe; }
+.section-title .count { font-family:'JetBrains Mono'; font-size:12px; padding:2px 8px; background:var(--bg-soft); border-radius:3px; color:var(--ink-dim); margin-left:auto; }
+</style>
+</head>
+<body>
+
+<div class="banner-real">
+  <strong>✅ DADOS REAIS · v3.2 · Histórico cumulativo + tendência multi-semana.</strong>
+  Aba 01 alimenta-se automaticamente do histórico/. Aba 04 acompanha resolução de casos pela Consultora RH ao longo das semanas.
+</div>
+
+<header class="main-header">
+  <div>
+    <p class="eyebrow">MONITORAMENTO · S23/2026 · 27/05/2026 a 02/06/2026</p>
+    <h1>Monitoramento de <em>Jornada</em></h1>
+    <p class="subtitle">Gran + GRSM · 16 ativos no indicador · 0 casos em tratativa RH · 0 suspenso · 14 semanas no histórico</p>
+  </div>
+  <div class="meta">
+    <div>Gerado em <strong>19/06 17:40</strong></div>
+    <div>Skill <strong>v3.2</strong> · histórico cumulativo</div>
+    <div>Fonte <strong>RHID + Escalas Abr+Mai/26</strong></div>
+  </div>
+</header>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="01"><span class="num">01</span>Histórico &amp; Tendência</button>
+    <button class="tab" data-tab="02"><span class="num">02</span>Panorama da Semana</button>
+    <button class="tab" data-tab="03"><span class="num">03</span>Detalhe Diário</button>
+    <button class="tab rh" data-tab="04"><span class="num">04</span>Tratativa RH (0)</button>
+  </div>
+</div>
+
+<main>
+
+<div class="tab-panel active" id="tab-01">
+  <div class="panel-header">
+    <h2>Histórico &amp; Tendência</h2>
+    <p>Visão cumulativa de 14 semanas (S10 a S25/2026). Atualizado a cada rodada — quanto mais semanas, mais sólida a leitura.</p>
+  </div>
+
+  <div class="section">
+    <h3 class="sec">● KPIs cumulativos · 14 semanas</h3>
+    <p class="subt">Soma de todas as semanas. Cada colaborador conta múltiplas vezes (uma por semana ativa).</p>
+    <div class="kpis-cum">
+      <div class="kpi-card crit"><div class="lbl">CRIT (semanas-colab)</div><div class="val">112</div></div>
+      <div class="kpi-card alert"><div class="lbl">ALERT (semanas-colab)</div><div class="val">107</div></div>
+      <div class="kpi-card ok"><div class="lbl">OK (semanas-colab)</div><div class="val">15</div></div>
+      <div class="kpi-card"><div class="lbl">Faltas secas total</div><div class="val">21</div></div>
+      <div class="kpi-card"><div class="lbl">Janela proib total</div><div class="val">128</div></div>
+      <div class="kpi-card"><div class="lbl">Atrasos &gt;15 total</div><div class="val">302</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="sec">● Tendência semanal</h3>
+    <p class="subt">Evolução do mix CRIT/ALERT/OK e ocorrências. Quando RH e gestores estão atuando, o vermelho desce.</p>
+    <div class="chart-wrap"><canvas id="trend"></canvas></div>
+    <div class="chart-wrap" style="margin-top:14px"><canvas id="trend2"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h3 class="sec">● Tabela semana a semana</h3>
+    <table class="tabela-semanas">
+      <thead><tr><th>Semana</th><th>Período</th><th>CRIT</th><th>ALERT</th><th>OK</th><th>Faltas</th><th>Janela proib</th><th>Atrasos</th><th>Tratativa RH</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="sid">S10/2026</td>
+          <td class="periodo">2026-03-04 a 2026-03-10</td>
+          <td class=""><span class="v-crit">11</span></td>
+          <td class=""><span class="v-alert">4</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">1</td>
+          <td class="">7</td>
+          <td class="">20</td>
+          <td class="">1</td>
+        </tr>
+        <tr>
+          <td class="sid">S11/2026</td>
+          <td class="periodo">2026-03-11 a 2026-03-17</td>
+          <td class=""><span class="v-crit">9</span></td>
+          <td class=""><span class="v-alert">6</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">1</td>
+          <td class="">7</td>
+          <td class="">18</td>
+          <td class="">0</td>
+        </tr>
+        <tr>
+          <td class="sid">S12/2026</td>
+          <td class="periodo">2026-03-18 a 2026-03-24</td>
+          <td class=""><span class="v-crit">5</span></td>
+          <td class=""><span class="v-alert">9</span></td>
+          <td class=""><span class="v-ok">2</span></td>
+          <td class="">1</td>
+          <td class="">3</td>
+          <td class="">16</td>
+          <td class="">0</td>
+        </tr>
+        <tr>
+          <td class="sid">S13/2026</td>
+          <td class="periodo">2026-03-25 a 2026-03-31</td>
+          <td class=""><span class="v-crit">6</span></td>
+          <td class=""><span class="v-alert">9</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">2</td>
+          <td class="">6</td>
+          <td class="">13</td>
+          <td class="">1</td>
+        </tr>
+        <tr>
+          <td class="sid">S14/2026</td>
+          <td class="periodo">2026-04-01 a 2026-04-07</td>
+          <td class=""><span class="v-crit">9</span></td>
+          <td class=""><span class="v-alert">7</span></td>
+          <td class=""><span class="v-ok">0</span></td>
+          <td class="">0</td>
+          <td class="">10</td>
+          <td class="">21</td>
+          <td class="">0</td>
+        </tr>
+        <tr>
+          <td class="sid">S15/2026</td>
+          <td class="periodo">2026-04-08 a 2026-04-14</td>
+          <td class=""><span class="v-crit">8</span></td>
+          <td class=""><span class="v-alert">9</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">1</td>
+          <td class="">8</td>
+          <td class="">26</td>
+          <td class="">2</td>
+        </tr>
+        <tr>
+          <td class="sid">S16/2026</td>
+          <td class="periodo">2026-04-15 a 2026-04-21</td>
+          <td class=""><span class="v-crit">7</span></td>
+          <td class=""><span class="v-alert">10</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">2</td>
+          <td class="">8</td>
+          <td class="">20</td>
+          <td class="">1</td>
+        </tr>
+        <tr>
+          <td class="sid">S17/2026</td>
+          <td class="periodo">2026-04-22 a 2026-04-28</td>
+          <td class=""><span class="v-crit">9</span></td>
+          <td class=""><span class="v-alert">7</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">0</td>
+          <td class="">8</td>
+          <td class="">27</td>
+          <td class="">3</td>
+        </tr>
+        <tr>
+          <td class="sid">S19/2026</td>
+          <td class="periodo">29/04/2026 a 05/05/2026</td>
+          <td class=""><span class="v-crit">8</span></td>
+          <td class=""><span class="v-alert">8</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">0</td>
+          <td class="">12</td>
+          <td class="">27</td>
+          <td class="">9</td>
+        </tr>
+        <tr>
+          <td class="sid">S20/2026</td>
+          <td class="periodo">06/05/2026 a 12/05/2026</td>
+          <td class=""><span class="v-crit">7</span></td>
+          <td class=""><span class="v-alert">10</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">2</td>
+          <td class="">14</td>
+          <td class="">23</td>
+          <td class="">0</td>
+        </tr>
+        <tr>
+          <td class="sid">S21/2026</td>
+          <td class="periodo">13/05/2026 a 19/05/2026</td>
+          <td class=""><span class="v-crit">7</span></td>
+          <td class=""><span class="v-alert">9</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">1</td>
+          <td class="">12</td>
+          <td class="">22</td>
+          <td class="">0</td>
+        </tr>
+        <tr>
+          <td class="sid">S22/2026</td>
+          <td class="periodo">20/05/2026 a 26/05/2026</td>
+          <td class=""><span class="v-crit">5</span></td>
+          <td class=""><span class="v-alert">9</span></td>
+          <td class=""><span class="v-ok">2</span></td>
+          <td class="">1</td>
+          <td class="">12</td>
+          <td class="">23</td>
+          <td class="">0</td>
+        </tr>
+        <tr>
+          <td class="sid atual">S23/2026</td>
+          <td class="periodo atual">27/05/2026 a 02/06/2026</td>
+          <td class="atual"><span class="v-crit">8</span></td>
+          <td class="atual"><span class="v-alert">7</span></td>
+          <td class="atual"><span class="v-ok">1</span></td>
+          <td class="atual">2</td>
+          <td class="atual">10</td>
+          <td class="atual">23</td>
+          <td class="atual">0</td>
+        </tr>
+        <tr>
+          <td class="sid">S25/2026</td>
+          <td class="periodo">10/06/2026 a 16/06/2026</td>
+          <td class=""><span class="v-crit">13</span></td>
+          <td class=""><span class="v-alert">3</span></td>
+          <td class=""><span class="v-ok">1</span></td>
+          <td class="">7</td>
+          <td class="">11</td>
+          <td class="">23</td>
+          <td class="">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3 class="sec">● Heatmap colaborador × semana</h3>
+    <p class="subt">Cada célula = status da semana. Reincidentes saltam aos olhos. Coluna destacada = semana atual.</p>
+    <div class="heatmap-multi"><div class="hm-header-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div></div><div class="h">S10</div><div class="h">S11</div><div class="h">S12</div><div class="h">S13</div><div class="h">S14</div><div class="h">S15</div><div class="h">S16</div><div class="h">S17</div><div class="h">S19</div><div class="h">S20</div><div class="h">S21</div><div class="h">S22</div><div class="h" style="color:var(--gran-dourado);font-weight:800">S23</div><div class="h">S25</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gran-dourado);font-weight:700">● Encarregados</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Alyne Bittencourt<small>Encarregados</small></div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Silvio Rouzan<small>Encarregados</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gran-dourado);font-weight:700">● Op. Loja</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Djalma Santos<small>Op. Loja</small></div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Jilney Alves<small>Op. Loja</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Joelison Frois<small>Op. Loja</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Luciene Dias<small>Op. Loja</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gran-dourado);font-weight:700">● Op. Caixas</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Grasiela Conceição<small>Op. Caixas</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Robson Santos<small>Op. Caixas</small></div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);font-weight:700">● Manobrista</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Jamilton Ribeiro<small>Manobrista</small></div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);font-weight:700">● Asg</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Jair Nascimento<small>Asg</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);font-weight:700">● Cozinha</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Emanuele Maciel<small>Cozinha</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Fernanda Mascarenhas<small>Cozinha</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Joselene Costa<small>Cozinha</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Magno Oliveira<small>Cozinha</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Solange Alves<small>Cozinha</small></div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-ok">✓</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);font-weight:700">● Suprimentos</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Elissandro Nascimento<small>Suprimentos</small></div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Elisssandro Nascimento<small>Suprimentos</small></div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Luis Guilherme<small>Suprimentos</small></div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div></div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Robert Ferreira<small>Suprimentos</small></div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div><div class="cell-mt cs-na">—</div></div><div style="grid-column:1/-1;padding:8px 0 4px;font-family:JetBrains Mono;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);font-weight:700">● Logística</div><div class="hm-row-multi" style="grid-template-columns:200px repeat(14, 1fr)"><div class="nome">Daniel Pereira<small>Logística</small></div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-alert">·</div><div class="cell-mt cs-crit">!</div><div class="cell-mt cs-crit">!</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="sec">● Top reincidentes (cumulativo)</h3>
+    <p class="subt">Quem mais acumula. Casos isolados saem; padrões comportamentais ficam.</p>
+    <div class="top-rank"><div class="top-card"><h4>● JANELA PROIBIDA (cumulativo)</h4><ol><li><span class="nm">Silvio Rouzan</span><small style="color:var(--ink-mute)">Encarregados</small><span class="total">38x</span></li><li><span class="nm">Jilney Alves</span><small style="color:var(--ink-mute)">Op. Loja</small><span class="total">30x</span></li><li><span class="nm">Grasiela Conceição</span><small style="color:var(--ink-mute)">Op. Caixas</small><span class="total">14x</span></li><li><span class="nm">Alyne Bittencourt</span><small style="color:var(--ink-mute)">Encarregados</small><span class="total">13x</span></li><li><span class="nm">Robson Santos</span><small style="color:var(--ink-mute)">Op. Caixas</small><span class="total">13x</span></li><li><span class="nm">Luciene Dias</span><small style="color:var(--ink-mute)">Op. Loja</small><span class="total">11x</span></li><li><span class="nm">Joelison Frois</span><small style="color:var(--ink-mute)">Op. Loja</small><span class="total">9x</span></li></ol></div><div class="top-card"><h4>● ATRASOS &gt;15MIN (cumulativo)</h4><ol><li><span class="nm">Fernanda Mascarenhas</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">43x</span></li><li><span class="nm">Robson Santos</span><small style="color:var(--ink-mute)">Op. Caixas</small><span class="total">42x</span></li><li><span class="nm">Magno Oliveira</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">40x</span></li><li><span class="nm">Jilney Alves</span><small style="color:var(--ink-mute)">Op. Loja</small><span class="total">39x</span></li><li><span class="nm">Solange Alves</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">34x</span></li><li><span class="nm">Jair Nascimento</span><small style="color:var(--ink-mute)">Asg</small><span class="total">33x</span></li><li><span class="nm">Jamilton Ribeiro</span><small style="color:var(--ink-mute)">Manobrista</small><span class="total">13x</span></li></ol></div><div class="top-card"><h4>● INTERVALO FORA (cumulativo)</h4><ol><li><span class="nm">Joselene Costa</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">58x</span></li><li><span class="nm">Alyne Bittencourt</span><small style="color:var(--ink-mute)">Encarregados</small><span class="total">57x</span></li><li><span class="nm">Emanuele Maciel</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">52x</span></li><li><span class="nm">Jilney Alves</span><small style="color:var(--ink-mute)">Op. Loja</small><span class="total">52x</span></li><li><span class="nm">Fernanda Mascarenhas</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">47x</span></li><li><span class="nm">Jair Nascimento</span><small style="color:var(--ink-mute)">Asg</small><span class="total">42x</span></li><li><span class="nm">Solange Alves</span><small style="color:var(--ink-mute)">Cozinha</small><span class="total">41x</span></li></ol></div></div></div>
+  <div class="section">
+    <h3 class="sec">● Tornado · piora vs melhora</h3>
+    <p class="subt">Variação na média semanal de ocorrências entre 2 períodos do histórico.</p>
+    <div class="tornado">
+      <div class="tornado-card melhora"><h4>▼ Quem MELHOROU</h4><div class="tornado-bar"><span class="nm">Jamilton Ribeiro</span><small style="color:var(--ink-mute);font-size:10px">Manobrista</small><span class="delta neg">-8.6/sem</span></div><div class="tornado-bar"><span class="nm">Robson Santos</span><small style="color:var(--ink-mute);font-size:10px">Op. Caixas</small><span class="delta neg">-3.6/sem</span></div><div class="tornado-bar"><span class="nm">Fernanda Mascarenhas</span><small style="color:var(--ink-mute);font-size:10px">Cozinha</small><span class="delta neg">-2.3/sem</span></div><div class="tornado-bar"><span class="nm">Magno Oliveira</span><small style="color:var(--ink-mute);font-size:10px">Cozinha</small><span class="delta neg">-0.8/sem</span></div></div><div class="tornado-card piora"><h4>▲ Quem PIOROU</h4><div class="tornado-bar"><span class="nm">Solange Alves</span><small style="color:var(--ink-mute);font-size:10px">Cozinha</small><span class="delta pos">+5.2/sem</span></div><div class="tornado-bar"><span class="nm">Jilney Alves</span><small style="color:var(--ink-mute);font-size:10px">Op. Loja</small><span class="delta pos">+4.3/sem</span></div><div class="tornado-bar"><span class="nm">Luciene Dias</span><small style="color:var(--ink-mute);font-size:10px">Op. Loja</small><span class="delta pos">+3.9/sem</span></div><div class="tornado-bar"><span class="nm">Grasiela Conceição</span><small style="color:var(--ink-mute);font-size:10px">Op. Caixas</small><span class="delta pos">+3.7/sem</span></div><div class="tornado-bar"><span class="nm">Robert Ferreira</span><small style="color:var(--ink-mute);font-size:10px">Suprimentos</small><span class="delta pos">+3.2/sem</span></div><div class="tornado-bar"><span class="nm">Jair Nascimento</span><small style="color:var(--ink-mute);font-size:10px">Asg</small><span class="delta pos">+2.3/sem</span></div><div class="tornado-bar"><span class="nm">Elisssandro Nascimento</span><small style="color:var(--ink-mute);font-size:10px">Suprimentos</small><span class="delta pos">+2.0/sem</span></div></div></div></div></div>
+<div class="tab-panel" id="tab-02">
+  <div class="panel-header">
+    <h2>Panorama da semana</h2>
+    <p>Visão executiva dos 16 ativos no indicador da semana S23/2026.</p>
+  </div>
+  <div class="kpis">
+    <div class="kpi crit"><div class="lbl">Críticos</div><div class="val">8</div></div>
+    <div class="kpi alert"><div class="lbl">Alertas</div><div class="val">7</div></div>
+    <div class="kpi ok"><div class="lbl">OK</div><div class="val">1</div></div>
+    <div class="kpi"><div class="lbl">Janela proibida (total)</div><div class="val" style="color:var(--vermelho)">10</div></div>
+    <div class="kpi"><div class="lbl">Atrasos &gt;15min</div><div class="val" style="color:var(--amarelo)">23</div></div>
+  </div>
+  <div class="tops"><div class="top-card-w crit"><h3>● Top 5 — Faltas secas</h3><ol><li><span class="nm">Daniel Pereira</span><span class="vl">1 dia</span></li><li><span class="nm">Jair Nascimento</span><span class="vl">1 dia</span></li></ol></div><div class="top-card-w alert"><h3>● Top 5 — Atrasos &gt;15min</h3><ol><li><span class="nm">Jilney Alves</span><span class="vl">6 ocorr.</span></li><li><span class="nm">Robson Santos</span><span class="vl">4 ocorr.</span></li><li><span class="nm">Jair Nascimento</span><span class="vl">3 ocorr.</span></li><li><span class="nm">Luciene Dias</span><span class="vl">3 ocorr.</span></li><li><span class="nm">Solange Alves</span><span class="vl">3 ocorr.</span></li></ol></div><div class="top-card-w warn"><h3>● Top 5 — Janela proibida</h3><ol><li><span class="nm">Jilney Alves</span><span class="vl">3 ocorr.</span></li><li><span class="nm">Robson Santos</span><span class="vl">3 ocorr.</span></li><li><span class="nm">Luciene Dias</span><span class="vl">2 ocorr.</span></li><li><span class="nm">Alyne Bittencourt</span><span class="vl">1 ocorr.</span></li><li><span class="nm">Silvio Rouzan</span><span class="vl">1 ocorr.</span></li></ol></div></div>
+  <div class="table-wrap"><table class="panorama">
+    <thead><tr><th>Status</th><th>Colaborador</th><th>Setor</th><th class="num">Faltas</th><th class="num">Atrasos &gt;15</th><th class="num">Saídas fora</th><th class="num">Interv. fora</th><th class="num">Janela proib.</th><th class="num">Pulou interv.</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Jilney Alves</td>
+        <td class="setor-cell restrito">Op. Loja</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">6</td><td class="num-cell alert">5</td>
+        <td class="num-cell alert">3</td><td class="num-cell crit">3</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Robson Santos</td>
+        <td class="setor-cell restrito">Op. Caixas</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">4</td><td class="num-cell alert">5</td>
+        <td class="num-cell alert">4</td><td class="num-cell crit">3</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Jair Nascimento</td>
+        <td class="setor-cell">Asg</td>
+        <td class="num-cell crit">1</td><td class="num-cell alert">3</td><td class="num-cell zero">—</td>
+        <td class="num-cell alert">4</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Daniel Pereira</td>
+        <td class="setor-cell">Logística</td>
+        <td class="num-cell crit">1</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+        <td class="num-cell alert">2</td><td class="num-cell zero">—</td><td class="num-cell crit">3</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Luciene Dias</td>
+        <td class="setor-cell restrito">Op. Loja</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">3</td><td class="num-cell alert">1</td>
+        <td class="num-cell zero">—</td><td class="num-cell crit">2</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Solange Alves</td>
+        <td class="setor-cell">Cozinha</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">3</td><td class="num-cell alert">2</td>
+        <td class="num-cell alert">3</td><td class="num-cell zero">—</td><td class="num-cell crit">1</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Alyne Bittencourt</td>
+        <td class="setor-cell restrito">Encarregados</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell alert">2</td>
+        <td class="num-cell alert">2</td><td class="num-cell crit">1</td><td class="num-cell crit">1</td>
+      </tr>
+      <tr><td><span class="badge crit">CRÍTICO</span></td><td class="nome-cell">Silvio Rouzan</td>
+        <td class="setor-cell restrito">Encarregados</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell alert">1</td>
+        <td class="num-cell alert">3</td><td class="num-cell crit">1</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Fernanda Mascarenhas</td>
+        <td class="setor-cell">Cozinha</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">1</td><td class="num-cell zero">—</td>
+        <td class="num-cell alert">3</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Elisssandro Nascimento</td>
+        <td class="setor-cell">Suprimentos</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">2</td><td class="num-cell alert">2</td>
+        <td class="num-cell alert">3</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Emanuele Maciel</td>
+        <td class="setor-cell">Cozinha</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+        <td class="num-cell alert">5</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Joselene Costa</td>
+        <td class="setor-cell">Cozinha</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell alert">2</td>
+        <td class="num-cell alert">3</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Joelison Frois</td>
+        <td class="setor-cell restrito">Op. Loja</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell alert">4</td>
+        <td class="num-cell alert">4</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Magno Oliveira</td>
+        <td class="setor-cell">Cozinha</td>
+        <td class="num-cell zero">—</td><td class="num-cell alert">1</td><td class="num-cell alert">3</td>
+        <td class="num-cell alert">1</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge alert">ALERTA</span></td><td class="nome-cell">Grasiela Conceição</td>
+        <td class="setor-cell restrito">Op. Caixas</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+        <td class="num-cell alert">1</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+      <tr><td><span class="badge ok">OK</span></td><td class="nome-cell">Jamilton Ribeiro</td>
+        <td class="setor-cell">Manobrista</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+        <td class="num-cell zero">—</td><td class="num-cell zero">—</td><td class="num-cell zero">—</td>
+      </tr>
+    </tbody></table></div>
+  <div class="suspensos-block"><h4>● Colaboradores suspensos</h4>
+    <strong>Emilly Brito</strong> · Suprimentos · suspensa em 07/05/2026.
+  </div>
+</div>
+
+<div class="tab-panel" id="tab-03">
+  <div class="panel-header">
+    <h2>Detalhe diário · 29/04 a 05/05</h2>
+    <p>Tabela espelhando a escala. Casos em tratativa RH ficam fora — ver aba 04.</p>
+  </div>
+  <div class="detalhe-wrap"><table class="detalhe">
+    <thead><tr><th class="col-nome">Colaborador</th><th class="col-dia">QUA<span class="dia-num">27/05</span></th><th class="col-dia">QUI<span class="dia-num">28/05</span></th><th class="col-dia">SEX<span class="dia-num">29/05</span></th><th class="col-dia">SÁB<span class="dia-num">30/05</span></th><th class="col-dia">DOM<span class="dia-num">31/05</span></th><th class="col-dia">SEG<span class="dia-num">01/06</span></th><th class="col-dia">TER<span class="dia-num">02/06</span></th></tr></thead><tbody><tr class="setor-divider restrito"><td colspan="8">Encarregados (setor restrito)</td></tr><tr><td class="nome-cell">Alyne Bittencourt <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula folga"><div class="tag-grande folga">FD<span class='sub'>Folga domingo</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:13 / 13:10<br>14:12 / 14:22</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">FF<span class='sub'>Folga feriado</span></div></div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:17 / 12:14<br>13:07 / 13:25</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 65 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 53 min (abaixo de 1h)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (11h-13h) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:13 / 13:03<br>14:02 / 14:11</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 19 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 59 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:16 / 14:32<br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at crit"><span class="ic">🔴</span><span>Trabalhou 08:16 sem intervalo registrado (limite CLT 6h)</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Silvio Rouzan <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:10 / 14:02<br>15:06 / 21:29</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:02 / 14:29<br>15:35 / 21:29</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:06 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:00 / 14:21<br>15:23 / 21:13</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:06 / 14:26<br>15:30 / 21:24</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:40 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>07:34 / 14:43<br>15:43 / 19:36</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 16 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>12:58 / 14:31<br>15:46 / 21:23</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:15 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>12:59 / 15:28<br>16:50 / 21:09</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 11 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:22 (acima de 1h05)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td></tr><tr class="setor-divider restrito"><td colspan="8">Operador de Loja (setor restrito)</td></tr><tr><td class="nome-cell">Jilney Alves <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:27 / 15:24<br>16:31 / 21:09</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 27 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 11 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:07 (acima de 1h05)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">FD<span class='sub'>Folga domingo</span></div></div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:19 / 15:35<br>16:54 / 21:04</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 19 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 16 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:19 (acima de 1h05)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>16:20 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>17:17 / 21:06<br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 57 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 14 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:40 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>08:05 / 13:47 (I)<br>14:47 / 19:11</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 25 min na entrada</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:30 / 15:15<br>16:30 / 21:08</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 30 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 12 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:15 (acima de 1h05)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:17 / 14:53<br>Suspensão / <em style='color:#999'>—</em><br><em style='color:#999'>—</em> / 00:43</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Sequência de batidas fora de ordem — VERIFICAR MANUALMENTE</span></div><div class="at warn"><span class="ic">⚠</span><span>Atraso de 17 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 1237 min antes do previsto</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Joelison Frois <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:00 / 12:06 (I)<br>13:06 / 14:10</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 20 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:03 / 12:57<br>13:54 / 14:14</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 16 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 57 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:00 / 13:00<br>13:55 / 14:13</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 17 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 55 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:07 / 13:05<br>13:24 / 13:55</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 35 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 19 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:07 / 12:59<br>14:01 / 14:20</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:08 / 13:19<br>14:12 / 14:22</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 53 min (abaixo de 1h)</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Luciene Dias <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:17 / 14:06<br>15:06 / 20:06</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 307 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 336 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:30 → 19:50</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:19 / 13:44<br>14:45 / 21:23</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 93 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:30 → 19:50</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:24 / 14:18<br>15:20 / 21:11</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 114 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 81 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>09:00 → 17:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:43 / 15:41<br>16:43 / 21:19</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 283 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 239 min após o previsto</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>12:56 / 14:46<br>15:47 / 21:14</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>12:56 / 15:15<br>16:17 / 21:06</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 14 min antes do previsto</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td></tr><tr class="setor-divider restrito"><td colspan="8">Operador de Caixas (setor restrito)</td></tr><tr><td class="nome-cell">Grasiela Conceição <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:05 / 13:10<br>14:11 / 14:38</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:07 / 13:12<br>14:14 / 14:30</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:11 / 12:29 (I)<br>13:29 / 14:28</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:07 / 13:35<br>14:21 / 14:37</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 46 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:40 → 16:00</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>07:35 / 13:15 (I)<br>14:15 / 16:18</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 18 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">FD<span class='sub'>Folga domingo</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:30 → 19:50</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:26 / 14:00<br>15:03 / 19:55</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Robson Santos <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:28 / 15:16<br>16:34 / 21:22</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 28 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:18 (acima de 1h05)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:36 / 15:00<br>16:27 / 20:09</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 36 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 71 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:27 (acima de 1h05)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:35 / 15:33<br>16:30 / 19:37</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 35 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 103 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 57 min (abaixo de 1h)</span></div><div class="at crit"><span class="ic">🔴</span><span>Descanso em janela proibida (16h-19:30) — setor restrito</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:15 / 14:27<br>15:36 / 19:42</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 98 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:09 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:13 / 14:41<br>15:42 / 16:50</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 150 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:30 → 19:50</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>12:00 / 13:37<br>14:42 / 18:10</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 30 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 100 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">FD<span class='sub'>Folga domingo</span></div></div></td></tr><tr class="setor-divider"><td colspan="8">Manobrista</td></tr><tr><td class="nome-cell">Jamilton Ribeiro <span class="badge ok" style="margin-left:6px">OK</span></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td><td><div class="dia-celula ferias"><div class="tag-grande ferias">FÉRIAS<span class='sub'>Período de férias</span></div></div></td></tr><tr class="setor-divider"><td colspan="8">Asg</td></tr><tr><td class="nome-cell">Jair Nascimento <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:15 / 14:18<br>15:16 / 19:22</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 58 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:26 / 14:08<br>14:59 / 19:20</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 26 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 51 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:44 / 15:11<br>16:04 / 20:04</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 44 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 44 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 53 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>09:00 → 17:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span><em style='color:#999'>—</em> / <em style='color:#999'>—</em><br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at crit"><span class="ic">🔴</span><span>Falta sem justificativa registrada</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:10 / 14:05<br>15:07 / 19:32</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 12 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>12:58 / 14:37<br>15:44 / 21:04</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 118 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 104 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:07 (acima de 1h05)</span></div></div>
+    </div></td></tr><tr class="setor-divider"><td colspan="8">Cozinha</td></tr><tr><td class="nome-cell">Emanuele Maciel <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 15:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:48 / 12:03<br>13:01 / 15:56</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 36 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 58 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 15:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:56 / 13:04<br>14:02 / 16:34</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 74 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 58 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 15:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:53 / 13:52<br>14:27 / 16:38</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 78 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 35 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 15:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:59 / 12:59<br>13:26 / 15:15</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 27 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 15:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:51 / 12:35<br>13:36 / 18:19</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 179 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 15:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:48 / 12:43<br>13:40 / 15:22</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 57 min (abaixo de 1h)</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Fernanda Mascarenhas <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>04:00 → 12:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>04:01 / 13:06<br>13:52 / 14:01</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 101 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 46 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>04:00 → 12:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>04:08 / 12:56<br>14:02 / 14:45</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 145 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:06 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>04:00 → 12:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>04:13 / 12:53<br>13:56 / 14:06</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 106 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>04:00 → 12:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>04:02 / 11:58 (I)<br>12:58 / 13:20</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 60 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>04:00 → 12:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>04:20 / 07:37<br>07:52 / 11:36 (I)<br>12:36 / 13:41</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 20 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 81 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 15 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>04:00 → 12:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>04:13 / 11:42 (I)<br>12:42 / 13:48</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 88 min após o previsto</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Joselene Costa <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:48 / 13:07<br>13:53 / 14:00</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 30 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 46 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:31 / 12:56<br>14:03 / 14:46</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 16 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:07 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:33 / 12:52<br>13:55 / 15:38</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 68 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:10 → 14:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:57 / 11:59 (I)<br>12:59 / 13:24</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 66 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:30 → 13:50</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:34 / 07:37<br>07:52 / 12:36<br>13:37 / 16:55</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 185 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 15 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:30 → 13:50</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:29 / 12:42<br>13:44 / 15:25</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 95 min após o previsto</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Magno Oliveira <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:13 / 15:42<br>16:44 / 17:40</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 100 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:21 / 16:22<br>17:23 / 18:38</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 21 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 42 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>09:00 → 17:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>09:07 / 15:55 (I)<br>16:55 / 17:05</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 15 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>09:00 → 17:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>Folga Domingo Trabalhado / Folga Domingo Trabalhado</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:05 / 14:27<br>15:27 / 19:20</div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>11:00 → 19:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>11:10 / 19:04<br>19:16 / 19:25</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 12 min (abaixo de 1h)</span></div></div>
+    </div></td></tr><tr><td class="nome-cell">Solange Alves <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:23 / 15:57<br>17:06 / 21:21</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 23 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:09 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:34 / 17:09<br>18:06 / 21:20 (I)</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 34 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 57 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:42 / 12:12<br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 548 min antes do previsto</span></div><div class="at crit"><span class="ic">🔴</span><span>Trabalhou 06:30 sem intervalo registrado (limite CLT 6h)</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:40 → 16:00</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>Folga / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at ok"><span class="ic">✓</span><span>OK</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:10 / 15:52<br>17:12 / 21:17</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:20 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>13:00 → 21:20</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>13:28 / 15:52<br>16:57 / 20:31</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 28 min na entrada</span></div><div class="at warn"><span class="ic">⚠</span><span>Saiu 49 min antes do previsto</span></div></div>
+    </div></td></tr><tr class="setor-divider"><td colspan="8">Suprimentos</td></tr><tr><td class="nome-cell">Elisssandro Nascimento <span class="badge alert" style="margin-left:6px">ALERTA</span></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:30 → 15:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:41 / 12:49<br>13:41 / 15:28</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 52 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:30 → 15:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:52 / 12:41<br>13:51 / 16:04</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 22 min na entrada</span></div><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 34 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:10 (acima de 1h05)</span></div></div>
+    </div></td><td><div class="dia-celula ok">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:30 → 15:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:43 / 12:27<br>13:30 / 16:17</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 47 min após o previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>06:30 → 10:30</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:48 / <em style='color:#999'>—</em><br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Atraso de 18 min na entrada</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 16:00</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:36 / 13:02<br>14:03 / 14:26</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 94 min antes do previsto</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>07:00 → 16:00</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>06:42 / 12:02<br>13:40 / 15:33</div>
+        <div class="alertas-list"><div class="at warn"><span class="ic">⚠</span><span>Saiu 27 min antes do previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 01:38 (acima de 1h05)</span></div></div>
+    </div></td></tr><tr class="setor-divider"><td colspan="8">Logística</td></tr><tr><td class="nome-cell">Daniel Pereira <span class="badge crit" style="margin-left:6px">CRÍTICO</span></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:20 → 13:40</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:04 / 14:11<br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 31 min após o previsto</span></div><div class="at crit"><span class="ic">🔴</span><span>Trabalhou 09:07 sem intervalo registrado (limite CLT 6h)</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:20 → 13:40</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:09 / 14:40<br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 60 min após o previsto</span></div><div class="at crit"><span class="ic">🔴</span><span>Trabalhou 09:31 sem intervalo registrado (limite CLT 6h)</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:20 → 13:40</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span><em style='color:#999'>—</em> / <em style='color:#999'>—</em><br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at crit"><span class="ic">🔴</span><span>Falta sem justificativa registrada</span></div></div>
+    </div></td><td><div class="dia-celula crit">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:20 → 13:40</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:10 / 13:47<br><em style='color:#999'>—</em> / <em style='color:#999'>—</em></div>
+        <div class="alertas-list"><div class="at crit"><span class="ic">🔴</span><span>Trabalhou 08:37 sem intervalo registrado (limite CLT 6h)</span></div></div>
+    </div></td><td><div class="dia-celula folga"><div class="tag-grande folga">F<span class='sub'>Folga regular</span></div></div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:20 → 13:40</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:14 / 07:39<br>08:24 / 14:30</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 50 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 45 min (abaixo de 1h)</span></div></div>
+    </div></td><td><div class="dia-celula alert">
+        <div class="row-prev"><span class="lbl-mini">Previsto</span>05:20 → 13:40</div>
+        <div class="row-bateu"><span class="lbl-mini">Bateu</span>05:14 / 07:23<br>08:22 / 15:21</div>
+        <div class="alertas-list"><div class="at info"><span class="ic">ℹ</span><span>Hora extra de 101 min após o previsto</span></div><div class="at warn"><span class="ic">⚠</span><span>Intervalo de 59 min (abaixo de 1h)</span></div></div>
+    </div></td></tr>
+    </tbody></table></div>
+</div>
+
+<div class="tab-panel" id="tab-04">
+  <div class="panel-header">
+    <h2>Tratativa RH — acompanhamento ativo</h2>
+    <p>Casos sob responsabilidade da Consultora RH. Status visível pra cobrança e KPI de desempenho.</p>
+  </div>
+  <div class="kpi-rh-perf">
+    <h4>● Desempenho RH na semana</h4>
+    <div class="num-grande">0 casos abertos</div>
+    <div class="legenda">0 pra investigar · 0 pra ajustar no RHID · 0 pra verificar</div>
+    <div class="legenda" style="margin-top:8px">→ Próxima rodada vai medir % resolvido e tempo médio.</div>
+  </div>
+  <div class="rh-resumo">
+    <div class="rh-resumo-card investigar"><h4>● INVESTIGAR (REG-S1/S6)</h4><div class="val">0</div><div class="sub">Falha biométrica suspeita ou abandono — fora dos indicadores.</div></div>
+    <div class="rh-resumo-card ajuste"><h4>● AJUSTE NO RHID (REG-S2/S3)</h4><div class="val">0</div><div class="sub">Esquecimento de batidas — corrigir antes do fechamento.</div></div>
+    <div class="rh-resumo-card verificar"><h4>● VERIFICAR (REG-S4)</h4><div class="val">0</div><div class="sub">Trabalhou em folga — confirmar convocação.</div></div>
+  </div>
+
+  <div class="suspensos-block" style="margin-top:18px">
+    <h4>● Inconsistências de cadastro</h4>
+    <strong>Josemaria Maximiana</strong> · saiu mas continua ativa no RHID.<br>
+    <strong>Alana</strong> · escala diz mas não bate ponto.<br>
+    <strong>Conflito Grasiela</strong> · escala manda (regra atual).
+  </div>
+</div>
+
+</main>
+
+<div class="foot">
+  Skill <span class="mono">monitoramento-jornada-gran v3.2</span> · Histórico cumulativo · 19/06 17:40 · 16 ativos · 0 tratativa RH · 0 suspenso · 14 semanas no histórico
+</div>
+
+<script>
+const dados = [{"sid": "S10", "periodo": "2026-03-04 a 2026-03-10", "crit": 11, "alert": 4, "ok": 1, "atrasos": 20, "jp": 7, "falta": 1, "tratativa": 1}, {"sid": "S11", "periodo": "2026-03-11 a 2026-03-17", "crit": 9, "alert": 6, "ok": 1, "atrasos": 18, "jp": 7, "falta": 1, "tratativa": 0}, {"sid": "S12", "periodo": "2026-03-18 a 2026-03-24", "crit": 5, "alert": 9, "ok": 2, "atrasos": 16, "jp": 3, "falta": 1, "tratativa": 0}, {"sid": "S13", "periodo": "2026-03-25 a 2026-03-31", "crit": 6, "alert": 9, "ok": 1, "atrasos": 13, "jp": 6, "falta": 2, "tratativa": 1}, {"sid": "S14", "periodo": "2026-04-01 a 2026-04-07", "crit": 9, "alert": 7, "ok": 0, "atrasos": 21, "jp": 10, "falta": 0, "tratativa": 0}, {"sid": "S15", "periodo": "2026-04-08 a 2026-04-14", "crit": 8, "alert": 9, "ok": 1, "atrasos": 26, "jp": 8, "falta": 1, "tratativa": 2}, {"sid": "S16", "periodo": "2026-04-15 a 2026-04-21", "crit": 7, "alert": 10, "ok": 1, "atrasos": 20, "jp": 8, "falta": 2, "tratativa": 1}, {"sid": "S17", "periodo": "2026-04-22 a 2026-04-28", "crit": 9, "alert": 7, "ok": 1, "atrasos": 27, "jp": 8, "falta": 0, "tratativa": 3}, {"sid": "S19", "periodo": "29/04/2026 a 05/05/2026", "crit": 8, "alert": 8, "ok": 1, "atrasos": 27, "jp": 12, "falta": 0, "tratativa": 9}, {"sid": "S20", "periodo": "06/05/2026 a 12/05/2026", "crit": 7, "alert": 10, "ok": 1, "atrasos": 23, "jp": 14, "falta": 2, "tratativa": 0}, {"sid": "S21", "periodo": "13/05/2026 a 19/05/2026", "crit": 7, "alert": 9, "ok": 1, "atrasos": 22, "jp": 12, "falta": 1, "tratativa": 0}, {"sid": "S22", "periodo": "20/05/2026 a 26/05/2026", "crit": 5, "alert": 9, "ok": 2, "atrasos": 23, "jp": 12, "falta": 1, "tratativa": 0}, {"sid": "S23", "periodo": "27/05/2026 a 02/06/2026", "crit": 8, "alert": 7, "ok": 1, "atrasos": 23, "jp": 10, "falta": 2, "tratativa": 0}, {"sid": "S25", "periodo": "10/06/2026 a 16/06/2026", "crit": 13, "alert": 3, "ok": 1, "atrasos": 23, "jp": 11, "falta": 7, "tratativa": 0}];
+const labels = dados.map(d => d.sid);
+new Chart(document.getElementById('trend'), {
+  type: 'bar',
+  data: {labels, datasets:[
+    {label:'CRIT', data:dados.map(d=>d.crit), backgroundColor:'#b8362f', stack:'st'},
+    {label:'ALERT', data:dados.map(d=>d.alert), backgroundColor:'#d4a52e', stack:'st'},
+    {label:'OK', data:dados.map(d=>d.ok), backgroundColor:'#3f8654', stack:'st'},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Mix de status por semana'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}
+});
+new Chart(document.getElementById('trend2'), {
+  type:'line',
+  data:{labels, datasets:[
+    {label:'Atrasos >15min', data:dados.map(d=>d.atrasos), borderColor:'#d4a52e', backgroundColor:'rgba(212,165,46,0.1)', tension:0.3, fill:true},
+    {label:'Janela proibida', data:dados.map(d=>d.jp), borderColor:'#b8362f', backgroundColor:'rgba(184,54,47,0.1)', tension:0.3, fill:true},
+    {label:'Tratativa RH', data:dados.map(d=>d.tratativa), borderColor:'#3a7bc8', backgroundColor:'rgba(58,123,200,0.1)', tension:0.3, fill:true, borderDash:[5,5]},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Tendência de ocorrências e Tratativa RH'}},scales:{y:{beginAtZero:true}}}
+});
+
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+</script>
+
+</body>
+</html>
