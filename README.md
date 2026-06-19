@@ -33,7 +33,7 @@ Casos sob responsabilidade da Consultora RH (falha biométrica suspeita, batidas
 
 ## Regras aplicadas
 
-1. **Atraso de entrada** > 10 min → alerta
+1. **Atraso de entrada** > 15 min → alerta
 2. **Saída antecipada** > 10 min → alerta
 3. **Intervalo fora da faixa** 1h-1h05 → alerta
 4. **Janela proibida** (descanso em horário de pico):
@@ -53,7 +53,7 @@ Setores restritos: Encarregados, Operador de Loja, Operador de Caixas.
 
 ## Atualização
 
-Toda **quarta-feira de manhã**. Próxima rodada: 24/06/2026.
+Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 24/06/2026.
 
 ---
 
