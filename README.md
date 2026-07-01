@@ -6,7 +6,7 @@ Sistema interno de monitoramento semanal de jornada de trabalho para colaborador
 
 ## Acesso ao relatório
 
-[**Abrir relatório atual (S25/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
+[**Abrir relatório atual (S26/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
 
 ## O que é
 
@@ -53,7 +53,7 @@ Setores restritos: Encarregados, Operador de Loja, Operador de Caixas.
 
 ## Atualização
 
-Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 24/06/2026.
+Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 08/07/2026.
 
 ---
 
