@@ -6,9 +6,9 @@ Sistema interno de monitoramento semanal de jornada de trabalho para colaborador
 
 ## Acesso ao relatório
 
-[**Abrir relatório atual (S30/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
+[**Abrir relatório atual (S31/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
 
-**Versão FINAL da S30/2026** (22/07 a 28/07), publicada em 30/07/2026.
+**Versão FINAL da S31/2026** (22/07 a 28/07), publicada em 30/07/2026.
 O ciclo tem duas etapas: na quarta sai a versão **preliminar** com as pendências dirigidas ao RH; na quinta sai a versão **final**, já com as respostas incorporadas.
 
 ## O que é
@@ -56,7 +56,7 @@ Setores restritos: Encarregados, Operador de Loja, Operador de Caixas.
 
 ## Atualização
 
-Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 05/08/2026.
+Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 12/08/2026.
 
 ---
 
