@@ -8,7 +8,7 @@ Sistema interno de monitoramento semanal de jornada de trabalho para colaborador
 
 [**Abrir relatório atual (S31/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
 
-**Versão FINAL da S31/2026** (22/07 a 28/07), publicada em 30/07/2026.
+**Versão FINAL da S31/2026** (29/07 a 04/08), publicada em 06/08/2026.
 O ciclo tem duas etapas: na quarta sai a versão **preliminar** com as pendências dirigidas ao RH; na quinta sai a versão **final**, já com as respostas incorporadas.
 
 ## O que é
