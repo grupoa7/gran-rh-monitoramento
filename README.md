@@ -6,10 +6,12 @@ Sistema interno de monitoramento semanal de jornada de trabalho para colaborador
 
 ## Acesso ao relatório
 
-[**Abrir relatório atual (S31/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
+[**Abrir relatório atual (S33/2026)**](https://grupoa7.github.io/gran-rh-monitoramento/)
 
-**Versão FINAL da S31/2026** (29/07 a 04/08), publicada em 06/08/2026.
+**Versão FINAL da S33/2026** (12/08 a 18/08), publicada em 24/08/2026.
 O ciclo tem duas etapas: na quarta sai a versão **preliminar** com as pendências dirigidas ao RH; na quinta sai a versão **final**, já com as respostas incorporadas.
+
+**S32/2026** (05/08 a 11/08) foi recuperada nesta mesma rodada (backfill) — a etapa 1 de 12/08 havia falhado no login do RHID e a semana ficou sem dado. Como a S32 é a primeira semana que conta para a premiação trimestral, ela está publicada em [relatorio_S32_2026.html](relatorio_S32_2026.html).
 
 ## O que é
 
@@ -56,7 +58,7 @@ Setores restritos: Encarregados, Operador de Loja, Operador de Caixas.
 
 ## Atualização
 
-Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 12/08/2026.
+Toda **quarta-feira às 14h** (America/Bahia). Próxima rodada: 26/08/2026.
 
 ---
 
